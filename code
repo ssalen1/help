@@ -1,0 +1,152 @@
+"""
+This file contains weekly challenge 4. This file generates an RSA key to encrypt
+and decrypt a message.
+
+**functions**
+	1. encrypt_rsa - encryptes a message inputed
+	2. decrypt_rsa - decrypts an encrypted message, encrypted by encrypt_rsa
+	3. is_prime - determines if an inputed number is a prime number
+	4. get_primes_in_range - outputs a list of all prime numbers in a certain
+	   range
+	5. get_primes_divisors - outputs a list of all prime divisors of a inputed 
+	   number
+	6. generate_keys - generates N, E, and D for RSA encryption keys
+"""
+import random
+
+def encrypt_rsa(message, N, E):
+	'''
+	This function encrypts an inputed message using N and E from an RSA 
+	encryption key.
+
+	The message is first translated into ascii using the ord function.
+	'''
+	message_in_ascii = map(ord, message)
+
+	# The message_in_ascii is encrypted using the RSA encryption values N and E.
+	# This is done by taking each encoded letter in message_in_ascii to the 
+	# power of E and then to the mod N.
+	cypher = [x % N for x in [i**E for i in message_in_ascii]]
+	return cypher
+
+def decrypt_rsa(encrypted_message, N, D):
+	'''
+	This function decrypted the inputed encypted_message using RSA encryption 
+	values N and D.
+
+	The message is decrypted by decyphering the encrypted_message using RSA 
+	encryption values N and D. This is done by takine each encoded_letter in 
+	the encrypted_message to the power of D and then to the mod N.
+	'''
+	decypher = [x % N for x in [i**D for i in encrypted_message]]
+	decrypted_message = "".join(map(chr, decypher))
+	return decrypted_message
+
+def is_prime(number):
+	'''
+	This function determines if an inputed number is prime.
+
+	The square root of the inputed number is the upper bound of the divisors
+	that need to be tested to determine if the number is prime.
+	'''
+	sqrt_number = int(number**(0.5))
+
+	# This for loop determines if the number is divisible by anything between
+	# 2 and the square root of the number. Only if the number is indivisible 
+	# and is a prime number will it return true.
+	for divisors in range(2, sqrt_number+1):
+		if number % divisors == 0:
+			y = False
+			return False
+		else:
+			continue
+	return True
+
+def get_primes_in_range(low, high):
+	'''
+	This function uses the is_prime function to find all the numbers in an 
+	inputed range that are prime and outputs a list of these numbers.
+
+	An empty list is created so the prime values can be added to this list.
+	'''
+	primes_in_range = []
+	for value in range(low, high+1):
+		if is_prime(value) == True:
+			primes_in_range.append(value)
+	return primes_in_range
+
+def get_prime_divisors(value):
+	'''
+	This function finds all the prime divisors of a given value. It
+	determines if the values is prime using the is_prime function.
+
+	An empty list is created so the prime divisor can be added to this list.
+	'''
+	prime_divisors = []
+	for divisor in range(2, value+1):
+		if value % divisor == 0:
+			if is_prime(divisor) == True:
+				prime_divisors.append(divisor)
+	return prime_divisors
+
+def generate_keys():
+	'''
+	This function generates keys for RSA encryptions. It generates an N, E,
+	and D value to be used in RSA encryptions. This function uses the functions
+	get_primes_in_range and get_prime_divisors to determine the key.
+
+	First, P and Q are determined by finding the prime numbers in a certain 
+	range random using the get_primes_in_range function. P and Q are different
+	quantities randomly selected from the primes within the range.
+	'''
+	P, Q = random.sample(get_primes_in_range(130, 1000), 2)
+	N = P * Q
+	X = (P - 1) * (Q - 1)
+
+	# An empty list is created to capture all the possible values of E to find
+	# all the possible E values and randomly select one from this list.
+	values_of_E = []
+
+	# E is found by finding all the prime divsors of E in the range of 2 to X-1
+	for E in range(2, X):
+		prime_divisors_of_E = get_prime_divisors(E)
+
+		# An empty list is created to distingish the values of E that share
+		# common demominators with X from those where the GCD is 1.
+		list_of_remainders_that_are_zero = []
+		for divisors in prime_divisors_of_E:	
+			remainder = X % divisors
+
+			# If the remainder when X is divided by the prime_divisors_of_E 
+			# is zero, then, and E are not relatively prime.
+			if remainder == 0:
+				list_of_remainders_that_are_zero.append(remainder)
+
+		# The len function determines if the list_of_remainders_that_are_zero
+		# is empty. If it is empty, then, X and E are relatively prime and 
+		# only have a GCD of 1.
+		if len(list_of_remainders_that_are_zero) == 0:
+			values_of_E.append(E)
+
+	# E is randomly chosen from the possible values_of_E.
+	E = random.choice(values_of_E)
+
+	# A value of D is selected based on D * E == 1 mod X. This can be found 
+	# using D * E == k * X + 1, where k is an integer.
+	for D in range(2, 1000000):
+		for k in range(0,10000):
+			if D * E == k * X + 1:
+				break
+		else:
+			continue
+		break
+
+	# N, E, and D are determined as the outputs of this function.
+	return N, E, D
+
+if __name__ == "__main__":
+	message = "This will be encrypted" 
+	N, E, D = generate_keys()
+	encrypted_str = encrypt_rsa(message, N=N, E=E)
+	decrypted_str = decrypt_rsa(encrypted_str, N=N, D=D)
+	print("I will encrypt \"%s\".\nEncrypted = %s\nDecrypted = %s\n" % (message, encrypted_str, decrypted_str))
